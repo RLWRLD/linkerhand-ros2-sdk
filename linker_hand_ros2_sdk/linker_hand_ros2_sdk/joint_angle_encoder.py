@@ -29,7 +29,9 @@ class JointAngleEncoder(Node):
         super().__init__("joint_angle_encoder")
         self.get_logger().info("JointAngleEncoder node started.")
 
-        self._enable_right_hand = self.declare_parameter("enable_right_hand", True).value
+        self._enable_right_hand = self.declare_parameter(
+            "enable_right_hand", True
+        ).value
         self._enable_left_hand = self.declare_parameter("enable_left_hand", True).value
         self._source = self.declare_parameter("source", "ros").value.lower()
 
@@ -133,7 +135,9 @@ class JointAngleEncoder(Node):
         self._zmq_endpoint = self.declare_parameter(
             "zmq_endpoint", "ipc:///tmp/linkerhand_reference"
         ).value
-        poll_interval_param = self.declare_parameter("zmq_poll_interval_sec", 0.01).value
+        poll_interval_param = self.declare_parameter(
+            "zmq_poll_interval_sec", 0.01
+        ).value
 
         try:
             poll_interval = float(poll_interval_param)
@@ -153,7 +157,8 @@ class JointAngleEncoder(Node):
         self._zmq_timer = self.create_timer(poll_interval, self._poll_zmq)
 
         self.get_logger().info(
-                f"Listening for joint references via ZMQ SUB on {self._zmq_endpoint}")
+            f"Listening for joint references via ZMQ SUB on {self._zmq_endpoint}"
+        )
 
     def _poll_zmq(self) -> None:
         if self._zmq_sock is None or self._zmq_poller is None:

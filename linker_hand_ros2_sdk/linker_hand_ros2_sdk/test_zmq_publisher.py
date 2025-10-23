@@ -19,19 +19,19 @@ class TestZmqPublisher(Node):
         super().__init__("test_zmq_publisher")
 
         if zmq is None:
-            raise RuntimeError("pyzmq is required for the ZMQ reference publisher node.")
+            raise RuntimeError(
+                "pyzmq is required for the ZMQ reference publisher node."
+            )
 
-        endpoint = (
-            self.declare_parameter(
-                "zmq_endpoint", "ipc:///tmp/linkerhand_reference"
-            ).value
-        )
+        endpoint = self.declare_parameter(
+            "zmq_endpoint", "ipc:///tmp/linkerhand_reference"
+        ).value
         publish_interval = float(
             self.declare_parameter("publish_interval_sec", 0.01).value
         )
-        self._publish_format = (
-            self.declare_parameter("payload_format", "binary").value.lower()
-        )
+        self._publish_format = self.declare_parameter(
+            "payload_format", "binary"
+        ).value.lower()
 
         # TODO: support json and text format
         if self._publish_format not in {"binary"}:

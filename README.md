@@ -22,12 +22,17 @@ sudo ip link set can0 type can bitrate 1000000 # This is needed only once after 
 # Source the package
 source install/setup.bash  
 
-# Launch L20 and position command encoder(radian -> byte)
-ros2 launch linker_hand_ros2_sdk linker_hand_radian_cmd.launch.py
+# Launch L20 to send position target via ROS2 msg
+ros2 launch linker_hand_ros2_sdk linker_hand_radian_cmd.launch.py source:=ros
+# Or via ZMQ
+ros2 launch linker_hand_ros2_sdk linker_hand_radian_cmd.launch.py source:=zmq
 ```
 
-## Topic description
-### `/linkerhand_right/reference`, `linkerhand_left/reference` (`sensor_msgs/JointState`)
+## How to Send Command
+*TODO(SH)*: Check left hand usability!
+
+### 1. By ROS2 topic
+#### `/linkerhand_right/reference`, `linkerhand_left/reference` (`sensor_msgs/JointState`) 
 - position commands in radian.
 - Joint order:
     - [thumb_cmc_pitch, index_mcp_pitch, middle_mcp_pitch, ring_mcp_pitch, pinky_mcp_pitch,
@@ -38,7 +43,7 @@ ros2 launch linker_hand_ros2_sdk linker_hand_radian_cmd.launch.py
         
         thumb_mcp, index_pip, middle_pip, ring_pip, pinky_pip] 
     - running gui_control node might be helpful to check joint order.
-- *TODO(SH)*: Check left usability!
+
 
 ```bash
 # Example command in CLI. 
@@ -46,8 +51,28 @@ ros2 topic pub --once /linkerhand_right/reference sensor_msgs/msg/JointState \
     "{position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}"
 ```
 
+### 2. By ZMQ
+Please check the code block to send command through zmq.
+
+More details are in `linker_hand_ros2_sdk/test_zmq_publisher.py`
+
+```python
+import zmq
+import struct
+
+endpoint = "ipc:///tmp/linkerhand_reference"
+context = zmq.Context()
+sock = socket.socket(zmq.PUB)
+sock.bind(endpoint)
+
+hand = "left" # or "right"
+data = [0.0 for _ in range(20)] # list(float)
+payload = struct.pack("<20f", *data)
+sock.send_multipart([hand.encode("utf-8"), payload], flags=zmq.NOBLOCK)
+```
+
 # Node description
-Please note that you may change parameters.
+Please note that you may need to change parameters.
 ### Main node to run L20
 ```bash
 ros2 run linker_hand_ros2_sdk linker_hand_sdk --ros-args -p hand_type:=right -p is_touch:=True -p can:=can0
