@@ -24,7 +24,7 @@ class LinkerHand(Node):
         super().__init__(name)
         # 声明参数（带默认值）
         self.declare_parameter('hand_type', 'left')
-        self.declare_parameter('hand_joint', 'L6')
+        self.declare_parameter('hand_joint', 'L20')
         self.declare_parameter('is_touch', False)
         self.declare_parameter('can', 'can0')
         
@@ -82,7 +82,7 @@ class LinkerHand(Node):
             time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
             self.hand_cmd_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd', self.left_hand_control_cb,10)
-            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd_arc', self.left_hand_control_arc_cb,10)
+            # self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_left_hand_control_cmd_arc', self.left_hand_control_arc_cb,10)
             self.hand_state_pub = self.create_publisher(JointState, '/cb_left_hand_state',10)
             self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_left_hand_state_arc',10)
             self.hand_info_pub = self.create_publisher(String, '/cb_left_hand_info', 10)
@@ -101,7 +101,7 @@ class LinkerHand(Node):
             time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
             self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,10)
-            self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
+            # self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
             self.hand_state_pub = self.create_publisher(JointState, '/cb_right_hand_state',10)
             self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_right_hand_state_arc',10)
             self.hand_info_pub = self.create_publisher(String, '/cb_right_hand_info', 10)
@@ -394,39 +394,39 @@ class LinkerHand(Node):
                 speed = vel
                 self.api.set_joint_speed(speed=speed)
 
-    def left_hand_control_arc_cb(self,msg):
-        if self.hand_cmd_sub.get_publisher_count() > 0:
-            return
-        now = time.time()
-        if now - self.last_process_time < self.min_interval:
-            return  # 丢弃当前帧，限频处理
-        self.last_process_time = now
-        '''左手接收控制topic回调 for arc'''
-        pose_range = self.api.arc_to_range_left(msg.position,self.hand_joint)
-        self.api.finger_move(pose=list(pose_range))
-        vel = list(msg.velocity)
-        self.vel = vel
-        if all(x == 0 for x in vel):
-            return
-        else:
-            if (str(self.hand_joint).upper() == "O6" or str(self.hand_joint).upper() == "L6" or str(self.hand_joint).upper() == "L6P") and len(vel) == 6:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L7" and len(vel) == 7:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L10" and len(vel) == 10:
-                speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L20" and len(vel) == 20:
-                speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L21" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L25" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
+    # def left_hand_control_arc_cb(self,msg):
+    #     if self.hand_cmd_sub.get_publisher_count() > 0:
+    #         return
+    #     now = time.time()
+    #     if now - self.last_process_time < self.min_interval:
+    #         return  # 丢弃当前帧，限频处理
+    #     self.last_process_time = now
+    #     '''左手接收控制topic回调 for arc'''
+    #     pose_range = self.api.arc_to_range_left(msg.position,self.hand_joint)
+    #     self.api.finger_move(pose=list(pose_range))
+    #     vel = list(msg.velocity)
+    #     self.vel = vel
+    #     if all(x == 0 for x in vel):
+    #         return
+    #     else:
+    #         if (str(self.hand_joint).upper() == "O6" or str(self.hand_joint).upper() == "L6" or str(self.hand_joint).upper() == "L6P") and len(vel) == 6:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L7" and len(vel) == 7:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L10" and len(vel) == 10:
+    #             speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L20" and len(vel) == 20:
+    #             speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L21" and len(vel) == 25:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L25" and len(vel) == 25:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
 
     def right_hand_control_cb(self,msg):
         now = time.time()
@@ -466,40 +466,40 @@ class LinkerHand(Node):
                 speed = vel
                 self.api.set_joint_speed(speed=speed)
 
-    def right_hand_control_arc_cb(self,msg):
-        if self.hand_cmd_sub.get_publisher_count() > 0:
-            return
-        now = time.time()
-        if now - self.last_process_time < self.min_interval:
-            return  # 丢弃当前帧，限频处理
-        self.last_process_time = now
-        '''右手接收控制topic回调 for arc'''
-        pose_range = self.api.arc_to_range_right(msg.position,self.hand_joint)
-        print(pose_range, flush=True)
-        self.api.finger_move(pose=list(pose_range))
-        vel = list(msg.velocity)
-        self.vel = vel
-        if all(x == 0 for x in vel):
-            return
-        else:
-            if (str(self.hand_joint).upper() == "O6" or str(self.hand_joint).upper() == "L6" or str(self.hand_joint).upper() == "L6P") and len(vel) == 6:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L7" and len(vel) == 7:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L10" and len(vel) == 10:
-                speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L20" and len(vel) == 20:
-                speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L21" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
-            elif self.hand_joint == "L25" and len(vel) == 25:
-                speed = vel
-                self.api.set_joint_speed(speed=speed)
+    # def right_hand_control_arc_cb(self,msg):
+    #     if self.hand_cmd_sub.get_publisher_count() > 0:
+    #         return
+    #     now = time.time()
+    #     if now - self.last_process_time < self.min_interval:
+    #         return  # 丢弃当前帧，限频处理
+    #     self.last_process_time = now
+    #     '''右手接收控制topic回调 for arc'''
+    #     pose_range = self.api.arc_to_range_right(msg.position,self.hand_joint)
+    #     print(pose_range, flush=True)
+    #     self.api.finger_move(pose=list(pose_range))
+    #     vel = list(msg.velocity)
+    #     self.vel = vel
+    #     if all(x == 0 for x in vel):
+    #         return
+    #     else:
+    #         if (str(self.hand_joint).upper() == "O6" or str(self.hand_joint).upper() == "L6" or str(self.hand_joint).upper() == "L6P") and len(vel) == 6:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L7" and len(vel) == 7:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L10" and len(vel) == 10:
+    #             speed = [vel[0],vel[2],vel[3],vel[4],vel[5]]
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L20" and len(vel) == 20:
+    #             speed = [vel[10],vel[1],vel[2],vel[3],vel[4]]
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L21" and len(vel) == 25:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
+    #         elif self.hand_joint == "L25" and len(vel) == 25:
+    #             speed = vel
+    #             self.api.set_joint_speed(speed=speed)
 
     def hand_setting_cb(self,msg):
         '''控制命令回调'''

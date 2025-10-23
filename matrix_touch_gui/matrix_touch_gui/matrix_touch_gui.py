@@ -21,7 +21,7 @@ class HandMatrixGui(Node, QObject):
 
         # 声明参数（带默认值）
         self.declare_parameter('hand_type', 'left')
-        self.declare_parameter('hand_joint', 'L10')
+        self.declare_parameter('hand_joint', 'L20')
         
         # 获取参数值
         self.hand_type = self.get_parameter('hand_type').value
