@@ -180,13 +180,14 @@ class ROS2NodeManager(QObject):
             
             if self.is_arc == True:
                 # 创建发布者
-                self.publisher_arc = self.node.create_publisher(
+                self.publisher = self.node.create_publisher(
                     JointState, f'/cb_{self.hand_type}_hand_control_cmd_arc', 10
                 )
-            # 创建发布者
-            self.publisher = self.node.create_publisher(
-                JointState, f'/cb_{self.hand_type}_hand_control_cmd', 10
-            )
+            else:
+                # 创建发布者
+                self.publisher = self.node.create_publisher(
+                    JointState, f'/cb_{self.hand_type}_hand_control_cmd', 10
+                )
             
             self.status_updated.emit("info", f"ROS2节点初始化成功: {self.hand_type} {self.hand_joint}")
             
@@ -221,7 +222,6 @@ class ROS2NodeManager(QObject):
                 else:
                     self.joint_state.name = hand_config.joint_names
                 
-            self.publisher.publish(self.joint_state)
             if self.is_arc == True:
                 if self.hand_joint == "O6":
                     if self.hand_type == "left":
@@ -246,7 +246,8 @@ class ROS2NodeManager(QObject):
                 else:
                     print(f"当前{self.hand_joint} {self.hand_type}不支持弧度转换", flush=True)
                 self.joint_state.position = [float(pos) for pos in pose]
-                self.publisher_arc.publish(self.joint_state)
+                
+            self.publisher.publish(self.joint_state)
             self.status_updated.emit("info", "关节状态已发布")
         except Exception as e:
             self.status_updated.emit("error", f"发布失败: {str(e)}")
