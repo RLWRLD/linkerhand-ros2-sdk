@@ -40,6 +40,7 @@ setup(
         'console_scripts': [
             'linker_hand_sdk = linker_hand_ros2_sdk.linker_hand:main',
             'joint_angle_encoder = linker_hand_ros2_sdk.joint_angle_encoder:main',
+            'test_zmq_publisher = linker_hand_ros2_sdk.test_zmq_publisher:main',
         ],
     },
 )
