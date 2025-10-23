@@ -59,6 +59,10 @@ class HandConfig:
                 "init_pos": [255] * 25,
             },
             "L20": {
+                "joint_names_en": ["thumb_cmc_pitch", "index_mcp_pitch", "middle_mcp_pitch", "ring_mcp_pitch", "pinky_mcp_pitch",
+                                   "thumb_cmc_roll", "index_mcp_roll", "middle_mcp_roll", "ring_mcp_roll", "pinky_mcp_roll",
+                                   "thumb_cmc_yaw", "NAN", "NAN", "NAN", "NAN",
+                                   "thumb_mcp", "index_pip", "middle_pip", "ring_pip", "pinky_pip"],
                 "joint_names": ["拇指根部", "食指根部", "中指根部", "无名指根部","小指根部",
                                 "拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小指侧摆",
                                 "拇指横摆","预留","预留","预留","预留","拇指尖部","食指末端",
@@ -542,7 +546,7 @@ class HandControlGUI(QWidget):
         self.slider_is_arc = []
         self.slider_scales = []
 
-        joint_names = self.hand_config.joint_names or []
+        joint_names = self.hand_config.joint_names_en if self.hand_config.joint_names_en else (self.hand_config.joint_names or [])
         init_positions = self.hand_config.init_pos or [0.0] * len(joint_names)
         slider_min = self.hand_config.slider_min or []
         slider_max = self.hand_config.slider_max or []
@@ -782,7 +786,7 @@ class HandControlGUI(QWidget):
     def on_slider_value_changed(self, index: int, value: int):
         """滑动条值改变事件处理"""
         if 0 <= index < len(self.slider_labels):
-            joint_names = self.hand_config.joint_names or []
+            joint_names = self.hand_config.joint_names_en if self.hand_config.joint_names_en else (self.hand_config.joint_names or [])
             joint_name = joint_names[index] if index < len(joint_names) else f"Joint {index}"
             actual_value = self._slider_raw_to_actual(index, value)
             display_value = self._format_slider_value(actual_value, self._is_arc_slider(index))
