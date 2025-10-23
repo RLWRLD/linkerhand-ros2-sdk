@@ -18,7 +18,7 @@ class JointAngleEncoder(Node):
         self.enable_right_hand = self.declare_parameter('enable_right_hand', True).value
         self.enable_left_hand = self.declare_parameter('enable_left_hand', True).value
 
-        best_effort_qos = QoSProfile(
+        qos = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
             depth=1,
         )
@@ -33,32 +33,28 @@ class JointAngleEncoder(Node):
                 JointState,
                 '/linkerhand_right/reference',
                 self._handle_right_ref,
-                best_effort_qos,
+                qos,
             )
             self.right_cmd_pub = self.create_publisher(
                 JointState,
                 '/cb_right_hand_control_cmd',
-                best_effort_qos,
+                10,
             )
             self.get_logger().info('Right hand interface enabled.')
-        else:
-            self.get_logger().info('Right hand interface disabled by parameter.')
 
         if self.enable_left_hand:
             self.left_ref_sub = self.create_subscription(
                 JointState,
                 '/linkerhand_left/reference',
                 self._handle_left_ref,
-                best_effort_qos,
+                qos,
             )
             self.left_cmd_pub = self.create_publisher(
                 JointState,
                 '/cb_left_hand_control_cmd',
-                best_effort_qos,
+                10,
             )
             self.get_logger().info('Left hand interface enabled.')
-        else:
-            self.get_logger().info('Left hand interface disabled by parameter.')
 
     def _handle_right_ref(self, msg: JointState) -> None:
         if not self.enable_right_hand or self.right_cmd_pub is None:

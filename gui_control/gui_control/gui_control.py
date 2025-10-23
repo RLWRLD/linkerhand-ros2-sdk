@@ -2,7 +2,7 @@ import sys
 import time
 import threading
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Header
@@ -21,81 +21,87 @@ from .utils.mapping import *
 @dataclass
 class HandConfig:
     """手部配置数据类"""
-    joint_names: List[str] = None
-    joint_names_en: List[str] = None
-    init_pos: List[int] = None
-    preset_actions: Dict[str, List[int]] = None
+    joint_names: List[str]
+    joint_names_en: Optional[List[str]] = None
+    init_pos: Optional[List[float]] = None
+    preset_actions: Optional[Dict[str, List[float]]] = None
+    is_arc: bool = False
+    slider_min: Optional[List[float]] = None
+    slider_max: Optional[List[float]] = None
 
     @classmethod
-    def from_hand_type(cls, hand_type: str) -> 'HandConfig':
+    def from_hand_type(cls, hand_type: str, hand_side: str = "left", is_arc: bool = False) -> 'HandConfig':
         """根据手部类型创建配置"""
-        hand_configs = {
-            "L25": cls(
-                joint_names=["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部",
-                            "大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆",
-                            "大拇指横滚","预留","预留","预留","预留","大拇指中部","食指中部",
-                            "中指中部","无名指中部","小拇指中部","大拇指指尖","食指指尖",
-                            "中指指尖","无名指指尖","小拇指指尖"],
-                init_pos=[255] * 25,
-                preset_actions={
+        hand_type_upper = hand_type.upper()
+
+        base_configs = {
+            "L25": {
+                "joint_names": ["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部",
+                                "大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆",
+                                "大拇指横滚","预留","预留","预留","预留","大拇指中部","食指中部",
+                                "中指中部","无名指中部","小拇指中部","大拇指指尖","食指指尖",
+                                "中指指尖","无名指指尖","小拇指指尖"],
+                "init_pos": [255] * 25,
+                "preset_actions": {
                     "握拳": [0]*25,
                     "张开": [255]*25,
-                    "OK": [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 
-                           255, 255, 255, 255, 255, 255, 0, 0, 255, 255, 
-                           0, 0, 0, 255, 255]
-                }
-            ),
-            "L21": cls(
-                joint_names=["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部",
-                            "大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆",
-                            "大拇指横滚","预留","预留","预留","预留","大拇指中部","预留",
-                            "预留","预留","预留","大拇指指尖","食指指尖","中指指尖",
-                            "无名指指尖","小拇指指尖"],
-                init_pos=[255] * 25
-            ),
-            "L20": cls(
-                joint_names=["拇指根部", "食指根部", "中指根部", "无名指根部","小指根部",
-                            "拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小指侧摆",
-                            "拇指横摆","预留","预留","预留","预留","拇指尖部","食指末端",
-                            "中指末端","无名指末端","小指末端"],
-                init_pos=[255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255],
-                preset_actions = {
+                    "OK": [255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                           255, 255, 255, 255, 255, 255, 0, 0, 255, 255,
+                           0, 0, 0, 255, 255],
+                },
+            },
+            "L21": {
+                "joint_names": ["大拇指根部","食指根部","中指根部","无名指根部","小拇指根部",
+                                "大拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小拇指侧摆",
+                                "大拇指横滚","预留","预留","预留","预留","大拇指中部","预留",
+                                "预留","预留","预留","大拇指指尖","食指指尖","中指指尖",
+                                "无名指指尖","小拇指指尖"],
+                "init_pos": [255] * 25,
+            },
+            "L20": {
+                "joint_names": ["拇指根部", "食指根部", "中指根部", "无名指根部","小指根部",
+                                "拇指侧摆","食指侧摆","中指侧摆","无名指侧摆","小指侧摆",
+                                "拇指横摆","预留","预留","预留","预留","拇指尖部","食指末端",
+                                "中指末端","无名指末端","小指末端"],
+                "init_pos": [255,255,255,255,255,255,10,100,180,240,245,255,255,255,255,255,255,255,255,255],
+                "preset_actions": {
                     "握拳": [40, 0, 0, 0, 0, 131, 10, 100, 180, 240, 19, 255, 255, 255, 255, 135, 0, 0, 0, 0],
                     "张开": [255, 255, 255, 255, 255, 255, 10, 100, 180, 240, 245, 255, 255, 255, 255, 255, 255, 255, 255, 255],
                     "OK": [191, 95, 255, 255, 255, 136, 107, 100, 180, 240, 72, 255, 255, 255, 255, 116, 99, 255, 255, 255],
-                    "点赞": [255, 0, 0, 0, 0, 127, 10, 100, 180, 240, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0]
-                }
-            ),
-            "L10": cls(
-                joint_names_en =["thumb_cmc_pitch", "thumb_cmc_roll","index_mcp_pitch","middle_mcp_pitch","ring_mcp_pitch","pinky_mcp_pitch","index_mcp_roll","ring_mcp_roll","pinky_mcp_roll","thumb_cmc_yaw"],
-                joint_names=["拇指根部", "拇指侧摆","食指根部", "中指根部", "无名指根部", 
-                            "小指根部","食指侧摆","无名指侧摆","小指侧摆","拇指旋转"],
-                init_pos=[255] * 10,
-                preset_actions={
+                    "点赞": [255, 0, 0, 0, 0, 127, 10, 100, 180, 240, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0],
+                },
+            },
+            "L10": {
+                "joint_names_en": ["thumb_cmc_pitch", "thumb_cmc_roll","index_mcp_pitch","middle_mcp_pitch",
+                                   "ring_mcp_pitch","pinky_mcp_pitch","index_mcp_roll","ring_mcp_roll",
+                                   "pinky_mcp_roll","thumb_cmc_yaw"],
+                "joint_names": ["拇指根部", "拇指侧摆","食指根部", "中指根部", "无名指根部",
+                                "小指根部","食指侧摆","无名指侧摆","小指侧摆","拇指旋转"],
+                "init_pos": [255] * 10,
+                "preset_actions": {
                     "握拳": [75, 128, 0, 0, 0, 0, 128, 128, 128, 57],
                     "张开": [255, 128, 255, 255, 255, 255, 128, 128, 128, 128],
                     "OK": [110, 128, 75, 255, 255, 255, 128, 128, 128, 68],
-                    "点赞": [255, 145, 0, 0, 0, 0, 0, 255, 255, 65]
-                }
-            ),
-            "L7": cls(
-                joint_names=["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", 
-                            "小拇指弯曲","拇指旋转"],
-                init_pos=[250] * 7,
-                preset_actions={
+                    "点赞": [255, 145, 0, 0, 0, 0, 0, 255, 255, 65],
+                },
+            },
+            "L7": {
+                "joint_names": ["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲",
+                                "小拇指弯曲","拇指旋转"],
+                "init_pos": [250] * 7,
+                "preset_actions": {
                     "握拳": [71, 79, 0, 0, 0, 0, 64],
                     "张开": [255, 111, 250, 250, 250, 250, 55],
                     "OK": [141, 111, 168, 250, 250, 250, 86],
-                    "点赞": [255, 111, 0, 0, 0, 0, 86]
-                }
-            ),
-            "O6": cls(
-                # [103, 102, 111, 250, 250, 250] 对指
-                joint_names_en = ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch", "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
-                joint_names=["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
-                init_pos=[250] * 6,
-                preset_actions={
-                    
+                    "点赞": [255, 111, 0, 0, 0, 0, 86],
+                },
+            },
+            "O6": {
+                "joint_names_en": ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch",
+                                   "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
+                "joint_names": ["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
+                "init_pos": [250] * 6,
+                "preset_actions": {
                     "张开": [250, 250, 250, 250, 250, 250],
                     "壹": [125, 18, 255, 0, 0, 0],
                     "贰": [92, 87, 255, 255, 0, 0],
@@ -105,15 +111,14 @@ class HandConfig:
                     "OK": [96, 100, 118, 250, 250, 250],
                     "点赞": [250, 79, 0, 0, 0, 0],
                     "握拳": [102, 18, 0, 0, 0, 0],
-                    
-                }
-            ),
-            "L6": cls(
-                joint_names_en = ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch", "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
-                joint_names=["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
-                init_pos=[250] * 6,
-                preset_actions={
-                    
+                },
+            },
+            "L6": {
+                "joint_names_en": ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch",
+                                   "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
+                "joint_names": ["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
+                "init_pos": [250] * 6,
+                "preset_actions": {
                     "张开": [250, 250, 250, 250, 250, 250],
                     "壹": [125, 18, 255, 0, 0, 0],
                     "贰": [92, 87, 255, 255, 0, 0],
@@ -123,14 +128,14 @@ class HandConfig:
                     "OK": [96, 100, 118, 250, 250, 250],
                     "点赞": [250, 79, 0, 0, 0, 0],
                     "握拳": [102, 18, 0, 0, 0, 0],
-                    
-                }
-            ),
-            "L6P": cls(
-                joint_names_en = ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch", "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
-                joint_names=["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
-                init_pos=[250] * 6,
-                preset_actions={
+                },
+            },
+            "L6P": {
+                "joint_names_en": ["thumb_cmc_pitch", "thumb_cmc_yaw", "index_mcp_pitch",
+                                   "middle_mcp_pitch", "pinky_mcp_pitch", "ring_mcp_pitch"],
+                "joint_names": ["大拇指弯曲", "大拇指横摆","食指弯曲", "中指弯曲", "无名指弯曲", "小拇指弯曲"],
+                "init_pos": [250] * 6,
+                "preset_actions": {
                     "张开": [250, 250, 250, 250, 250, 250],
                     "壹": [0, 31, 255, 0, 0, 0],
                     "贰": [0, 31, 255, 255, 0, 0],
@@ -140,10 +145,78 @@ class HandConfig:
                     "OK": [54, 41, 164, 250, 250, 250],
                     "点赞": [255, 31, 0, 0, 0, 0],
                     "握拳": [49, 61, 0, 0, 0, 0],
-                }
-            ),
+                },
+            },
         }
-        return hand_configs.get(hand_type.upper(), hand_configs["L10"])
+
+        base = base_configs.get(hand_type_upper, base_configs["L10"])
+
+        joint_names = list(base["joint_names"])  # type: ignore[index]
+        joint_names_en_data = base.get("joint_names_en")
+        joint_names_en = list(joint_names_en_data) if joint_names_en_data else None
+        init_pos = list(base["init_pos"])  # type: ignore[index]
+        preset_actions_data = base.get("preset_actions", {})
+        preset_actions = dict(preset_actions_data) if preset_actions_data else {}
+
+        config = cls(
+            joint_names=joint_names,
+            joint_names_en=joint_names_en,
+            init_pos=init_pos,
+            preset_actions=preset_actions,
+            is_arc=is_arc,
+            slider_min=[0.0] * len(joint_names),
+            slider_max=[255.0] * len(joint_names),
+        )
+
+        if is_arc:
+            arc_limits = cls._get_arc_limits(hand_side, hand_type_upper)
+            if arc_limits:
+                min_vals, max_vals = arc_limits
+                config.slider_min = list(min_vals)
+                config.slider_max = list(max_vals)
+                config.init_pos = cls._range_to_arc(init_pos, hand_side, hand_type_upper)
+            else:
+                config.slider_min = None
+                config.slider_max = None
+            config.preset_actions = {}
+
+        return config
+
+    @staticmethod
+    def _get_arc_limits(hand_side: str, hand_type: str) -> Optional[Tuple[List[float], List[float]]]:
+        lookup: Dict[Tuple[str, str], Tuple[List[float], List[float]]] = {
+            ("left", "O6"): (o6_l_min, o6_l_max),
+            ("right", "O6"): (o6_r_min, o6_r_max),
+            ("left", "L7"): (l7_l_min, l7_l_max),
+            ("right", "L7"): (l7_r_min, l7_r_max),
+            ("left", "L10"): (l10_l_min, l10_l_max),
+            ("right", "L10"): (l10_r_min, l10_r_max),
+            ("left", "L20"): (l20_l_min, l20_l_max),
+            ("right", "L20"): (l20_r_min, l20_r_max),
+            ("left", "L21"): (l21_l_min, l21_l_max),
+            ("right", "L21"): (l21_r_min, l21_r_max),
+            ("left", "L25"): (l25_l_min, l25_l_max),
+            ("right", "L25"): (l25_r_min, l25_r_max),
+        }
+        key = (hand_side.lower(), hand_type.upper())
+        return lookup.get(key)
+
+    @staticmethod
+    def _range_to_arc(positions: List[float], hand_side: str, hand_type: str) -> List[float]:
+        try:
+            if hand_side.lower() == "left":
+                arc_positions = range_to_arc_left(positions, hand_joint=hand_type)
+            else:
+                arc_positions = range_to_arc_right(positions, hand_joint=hand_type)
+        except Exception:
+            arc_positions = []
+
+        if not arc_positions:
+            return [0.0] * len(positions)
+        return arc_positions
+
+
+ARC_SLIDER_SCALE = 1000
 
 class ROS2NodeManager(QObject):
     """ROS2节点管理器，处理ROS通信"""
@@ -168,7 +241,7 @@ class ROS2NodeManager(QObject):
             
             # 声明参数
             self.node.declare_parameter('hand_type', 'left')
-            self.node.declare_parameter('hand_joint', 'L10')
+            self.node.declare_parameter('hand_joint', 'L20')
             self.node.declare_parameter('topic_hz', 30)
             self.node.declare_parameter('is_arc', False)
             
@@ -178,10 +251,10 @@ class ROS2NodeManager(QObject):
             self.hz = self.node.get_parameter('topic_hz').value
             self.is_arc = self.node.get_parameter('is_arc').value
             
-            if self.is_arc == True:
+            if self.is_arc is True:
                 # 创建发布者
                 self.publisher = self.node.create_publisher(
-                    JointState, f'/cb_{self.hand_type}_hand_control_cmd_arc', 10
+                    JointState, f'/linkerhand_{self.hand_type}/reference', 10
                 )
             else:
                 # 创建发布者
@@ -203,7 +276,7 @@ class ROS2NodeManager(QObject):
         while rclpy.ok() and self.node:
             rclpy.spin_once(self.node, timeout_sec=0.1)
 
-    def publish_joint_state(self, positions: List[int]):
+    def publish_joint_state(self, positions: List[float]):
         """发布关节状态消息"""
         if not self.publisher or not self.node:
             self.status_updated.emit("error", "ROS2发布者未初始化")
@@ -215,37 +288,39 @@ class ROS2NodeManager(QObject):
             # self.joint_state.velocity = [0.1] * len(positions)
             # self.joint_state.effort = [0.01] * len(positions)
             # 如果有关节名称，添加到消息中
-            hand_config = HandConfig.from_hand_type(self.hand_joint)
-            if len(hand_config.joint_names) == len(positions):
-                if hand_config.joint_names_en != None:
+            hand_config = HandConfig.from_hand_type(
+                self.hand_joint, self.hand_type, self.is_arc
+            )
+            if hand_config.joint_names and len(hand_config.joint_names) == len(positions):
+                if hand_config.joint_names_en:
                     self.joint_state.name = hand_config.joint_names_en
                 else:
                     self.joint_state.name = hand_config.joint_names
                 
-            if self.is_arc == True:
-                if self.hand_joint == "O6":
-                    if self.hand_type == "left":
-                        pose = range_to_arc_left(positions,self.hand_joint)
-                    elif self.hand_type == "right":
-                        pose = range_to_arc_right(positions,self.hand_joint)
-                elif self.hand_joint == "L7" or self.hand_joint == "L21" or self.hand_joint == "L25":
-                    if self.hand_type == "left":
-                        pose = range_to_arc_left(positions,self.hand_joint)
-                    elif self.hand_type == "right":
-                        pose = range_to_arc_right(positions,self.hand_joint)
-                elif self.hand_joint == "L10":
-                    if self.hand_type == "left":
-                        pose = range_to_arc_left_10(positions)
-                    elif self.hand_type == "right":
-                        pose = range_to_arc_right_10(positions)
-                elif self.hand_joint == "L20":
-                    if self.hand_type == "left":
-                        pose = range_to_arc_left_l20(positions)
-                    elif self.hand_type == "right":
-                        pose = range_to_arc_right_l20(positions)
-                else:
-                    print(f"当前{self.hand_joint} {self.hand_type}不支持弧度转换", flush=True)
-                self.joint_state.position = [float(pos) for pos in pose]
+            # if self.is_arc == True:
+            #     if self.hand_joint == "O6":
+            #         if self.hand_type == "left":
+            #             pose = range_to_arc_left(positions,self.hand_joint)
+            #         elif self.hand_type == "right":
+            #             pose = range_to_arc_right(positions,self.hand_joint)
+            #     elif self.hand_joint == "L7" or self.hand_joint == "L21" or self.hand_joint == "L25":
+            #         if self.hand_type == "left":
+            #             pose = range_to_arc_left(positions,self.hand_joint)
+            #         elif self.hand_type == "right":
+            #             pose = range_to_arc_right(positions,self.hand_joint)
+            #     elif self.hand_joint == "L10":
+            #         if self.hand_type == "left":
+            #             pose = range_to_arc_left_10(positions)
+            #         elif self.hand_type == "right":
+            #             pose = range_to_arc_right_10(positions)
+            #     elif self.hand_joint == "L20":
+            #         if self.hand_type == "left":
+            #             pose = range_to_arc_left_l20(positions)
+            #         elif self.hand_type == "right":
+            #             pose = range_to_arc_right_l20(positions)
+            #     else:
+            #         print(f"当前{self.hand_joint} {self.hand_type}不支持弧度转换", flush=True)
+            #     self.joint_state.position = [float(pos) for pos in pose]
                 
             self.publisher.publish(self.joint_state)
             self.status_updated.emit("info", "关节状态已发布")
@@ -278,7 +353,12 @@ class HandControlGUI(QWidget):
         # 获取手部配置
         self.hand_joint = self.ros_manager.hand_joint
         self.hand_type = self.ros_manager.hand_type
-        self.hand_config = HandConfig.from_hand_type(self.hand_joint)
+        self.is_arc = self.ros_manager.is_arc
+        self.hand_config = HandConfig.from_hand_type(
+            self.hand_joint, self.hand_type, self.is_arc
+        )
+        self.slider_is_arc: List[bool] = []
+        self.slider_scales: List[float] = []
         
         # 初始化UI
         self.init_ui()
@@ -459,29 +539,96 @@ class HandControlGUI(QWidget):
         # 创建新滑动条
         self.sliders = []
         self.slider_labels = []
+        self.slider_is_arc = []
+        self.slider_scales = []
+
+        joint_names = self.hand_config.joint_names or []
+        init_positions = self.hand_config.init_pos or [0.0] * len(joint_names)
+        slider_min = self.hand_config.slider_min or []
+        slider_max = self.hand_config.slider_max or []
+
+        arc_mode = (
+            self.is_arc
+            and slider_min
+            and slider_max
+            and len(slider_min) >= len(joint_names)
+            and len(slider_max) >= len(joint_names)
+        )
         
-        for i, (name, value) in enumerate(zip(
-            self.hand_config.joint_names, self.hand_config.init_pos
-        )):
-            # 创建标签
-            label = QLabel(f"{name}: {value}")
+        for idx, name in enumerate(joint_names):
+            initial_value = float(init_positions[idx]) if idx < len(init_positions) else 0.0
+
+            label = QLabel()
             label.setMinimumWidth(120)
             
-            # 创建滑动条
             slider = QSlider(Qt.Horizontal)
-            slider.setRange(0, 255)
-            slider.setValue(value)
+
+            if arc_mode:
+                min_val = float(slider_min[idx])
+                max_val = float(slider_max[idx])
+                if min_val > max_val:
+                    min_val, max_val = max_val, min_val
+
+                scale = ARC_SLIDER_SCALE
+                scaled_min = int(round(min_val * scale))
+                scaled_max = int(round(max_val * scale))
+                if scaled_min == scaled_max:
+                    scaled_max = scaled_min + 1
+
+                slider.setMinimum(scaled_min)
+                slider.setMaximum(scaled_max)
+                slider.setSingleStep(1)
+
+                slider_value = int(round(initial_value * scale))
+                slider_value = max(scaled_min, min(slider_value, scaled_max))
+                slider.setValue(slider_value)
+
+                self.slider_is_arc.append(True)
+                self.slider_scales.append(float(scale))
+            else:
+                slider.setMinimum(0)
+                slider.setMaximum(255)
+                slider.setSingleStep(1)
+
+                slider_value = int(round(initial_value))
+                slider_value = max(0, min(slider_value, 255))
+                slider.setValue(slider_value)
+
+                self.slider_is_arc.append(False)
+                self.slider_scales.append(1.0)
+
             slider.valueChanged.connect(
-                lambda val, idx=i: self.on_slider_value_changed(idx, val)
+                lambda val, slider_index=idx: self.on_slider_value_changed(slider_index, val)
             )
-            
-            # 添加到布局
-            row, col = divmod(i, 1)
+
+            actual_value = self._slider_raw_to_actual(idx, slider.value())
+            label.setText(f"{name}: {self._format_slider_value(actual_value, self.slider_is_arc[idx])}")
+
+            row = idx
             self.sliders_layout.addWidget(label, row, 0)
             self.sliders_layout.addWidget(slider, row, 1)
-            
+
             self.sliders.append(slider)
             self.slider_labels.append(label)
+
+    def _is_arc_slider(self, index: int) -> bool:
+        return 0 <= index < len(self.slider_is_arc) and self.slider_is_arc[index]
+
+    def _slider_raw_to_actual(self, index: int, raw_value: int) -> float:
+        if self._is_arc_slider(index):
+            scale = self.slider_scales[index] if index < len(self.slider_scales) else ARC_SLIDER_SCALE
+            return raw_value / scale
+        return float(raw_value)
+
+    def _actual_to_slider_raw(self, index: int, actual_value: float) -> int:
+        if self._is_arc_slider(index):
+            scale = self.slider_scales[index]
+            return int(round(actual_value * scale))
+        return int(round(actual_value))
+
+    @staticmethod
+    def _format_slider_value(value: float, is_arc: bool) -> str:
+        return f"{value:.3f}" if is_arc else f"{int(round(value))}"
 
     def create_preset_actions_panel(self):
         """创建预设动作面板"""
@@ -635,8 +782,11 @@ class HandControlGUI(QWidget):
     def on_slider_value_changed(self, index: int, value: int):
         """滑动条值改变事件处理"""
         if 0 <= index < len(self.slider_labels):
-            joint_name = self.hand_config.joint_names[index]
-            self.slider_labels[index].setText(f"{joint_name}: {value}")
+            joint_names = self.hand_config.joint_names or []
+            joint_name = joint_names[index] if index < len(joint_names) else f"Joint {index}"
+            actual_value = self._slider_raw_to_actual(index, value)
+            display_value = self._format_slider_value(actual_value, self._is_arc_slider(index))
+            self.slider_labels[index].setText(f"{joint_name}: {display_value}")
             
         # 更新数值显示
         self.update_value_display()
@@ -644,12 +794,18 @@ class HandControlGUI(QWidget):
     def update_value_display(self):
         """更新数值显示面板内容"""
         # 获取所有滑动条的当前值
-        values = [slider.value() for slider in self.sliders]
+        formatted_values = []
+        for i, slider in enumerate(self.sliders):
+            actual_value = self._slider_raw_to_actual(i, slider.value())
+            if self._is_arc_slider(i):
+                formatted_values.append(round(actual_value, 3))
+            else:
+                formatted_values.append(int(round(actual_value)))
         
         # 格式化显示为列表形式
-        self.value_display.setText(f"{values}")
+        self.value_display.setText(f"{formatted_values}")
 
-    def on_preset_action_clicked(self, positions: List[int]):
+    def on_preset_action_clicked(self, positions: List[float]):
         """预设动作按钮点击事件处理"""
         if len(positions) != len(self.sliders):
             QMessageBox.warning(
@@ -660,16 +816,23 @@ class HandControlGUI(QWidget):
             
         # 更新滑动条
         for i, (slider, pos) in enumerate(zip(self.sliders, positions)):
-            slider.setValue(pos)
-            self.on_slider_value_changed(i, pos)
+            target_actual = float(pos)
+            raw_value = self._actual_to_slider_raw(i, target_actual)
+            raw_value = max(slider.minimum(), min(raw_value, slider.maximum()))
+            slider.setValue(raw_value)
+            self.on_slider_value_changed(i, slider.value())
             
         # 发布关节状态
         self.publish_joint_state()
 
     def on_home_clicked(self):
         """回到初始位置按钮点击事件处理"""
-        for slider, pos in zip(self.sliders, self.hand_config.init_pos):
-            slider.setValue(pos)
+        init_positions = self.hand_config.init_pos or []
+        for i, slider in enumerate(self.sliders):
+            target_actual = float(init_positions[i]) if i < len(init_positions) else 0.0
+            raw_value = self._actual_to_slider_raw(i, target_actual)
+            raw_value = max(slider.minimum(), min(raw_value, slider.maximum()))
+            slider.setValue(raw_value)
             
         self.publish_joint_state()
         self.status_updated.emit("info", "回到初始位置")
@@ -749,7 +912,9 @@ class HandControlGUI(QWidget):
     def on_joint_type_changed(self, joint_type: str):
         """关节类型改变事件处理"""
         self.hand_joint = joint_type
-        self.hand_config = HandConfig.from_hand_type(joint_type)
+        self.hand_config = HandConfig.from_hand_type(
+            joint_type, self.hand_type, self.is_arc
+        )
         
         # 更新手部信息
         info_text = f"""手部类型: {self.hand_type}
@@ -768,7 +933,10 @@ class HandControlGUI(QWidget):
 
     def publish_joint_state(self):
         """发布当前关节状态"""
-        positions = [slider.value() for slider in self.sliders]
+        positions = [
+            self._slider_raw_to_actual(i, slider.value())
+            for i, slider in enumerate(self.sliders)
+        ]
         self.ros_manager.publish_joint_state(positions)
 
     def update_status(self, status_type: str, message: str):
