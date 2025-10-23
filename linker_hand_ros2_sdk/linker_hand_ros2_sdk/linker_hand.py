@@ -149,24 +149,24 @@ class LinkerHand(Node):
 
     def run(self):
         self.thread_get_state = threading.Thread(target=self._get_hand_state)
-        self.thread_get_state.daemon = True
-        self.thread_get_state.start()
+        # self.thread_get_state.daemon = True
+        # self.thread_get_state.start()
         # self.thread_get_state.join()
         
         self.thread_get_info = threading.Thread(target=self.get_hand_info)
-        self.thread_get_info.daemon = True
-        self.thread_get_info.start()
+        # self.thread_get_info.daemon = True
+        # self.thread_get_info.start()
         # self.thread_get_info.join()
         if self.is_touch == True:
             if self.touch_type == 2:
                 self.thread_get_matrix_touch = threading.Thread(target=self.get_matrix_touch)
-                self.thread_get_matrix_touch.daemon = True
-                self.thread_get_matrix_touch.start()
+                # self.thread_get_matrix_touch.daemon = True
+                # self.thread_get_matrix_touch.start()
                 # self.thread_get_matrix_touch.join()
             elif self.touch_type != -1 and self.touch_type != 2:
                 self.thread_get_touch = threading.Thread(target=self.get_hand_touch)
-                self.thread_get_touch.daemon = True
-                self.thread_get_touch.start()
+                # self.thread_get_touch.daemon = True
+                # self.thread_get_touch.start()
                 # self.thread_get_touch.join()
 
 
@@ -360,8 +360,8 @@ class LinkerHand(Node):
 
     def left_hand_control_cb(self,msg):
         now = time.time()
-        if now - self.last_process_time < self.min_interval:
-            return  # 丢弃当前帧，限频处理
+        # if now - self.last_process_time < self.min_interval:
+        #     return  # 丢弃当前帧，限频处理
         self.last_process_time = now
         tmp_pose = [0] * 6
         pose = list(msg.position)
@@ -430,8 +430,8 @@ class LinkerHand(Node):
 
     def right_hand_control_cb(self,msg):
         now = time.time()
-        if now - self.last_process_time < self.min_interval:
-            return  # 丢弃当前帧，限频处理
+        # if now - self.last_process_time < self.min_interval:
+        #     return  # 丢弃当前帧，限频处理
         self.last_process_time = now
         '''右手接收控制topic回调 for range'''
         pose = list(msg.position)
