@@ -56,7 +56,7 @@ class TestZmqPublisher(Node):
         self._cnt = 0.0
 
     def _publish(self) -> None:
-        base_value = math.sin(self._cnt / 50) * 0.5 + 0.5
+        base_value = math.sin(self._cnt / 30) * 0.5 + 0.5
         print(f"{base_value:3f}", flush=True)
         self._cnt += 1
         right_positions = self._make_positions(base_value)

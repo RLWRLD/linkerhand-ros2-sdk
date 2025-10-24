@@ -152,12 +152,12 @@ class LinkerHand(Node):
         self.thread_get_state = threading.Thread(target=self._get_hand_state)
         self.thread_get_state.daemon = True
         self.thread_get_state.start()
-        self.thread_get_state.join()
+        # self.thread_get_state.join()
         
         self.thread_get_info = threading.Thread(target=self.get_hand_info)
         self.thread_get_info.daemon = True
         self.thread_get_info.start()
-        self.thread_get_info.join()
+        # self.thread_get_info.join()
         if self.is_touch == True:
             if self.touch_type == 2:
                 self.thread_get_matrix_touch = threading.Thread(target=self.get_matrix_touch)

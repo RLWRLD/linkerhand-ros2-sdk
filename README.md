@@ -63,6 +63,9 @@ import struct
 endpoint = "ipc:///tmp/linkerhand_reference"
 context = zmq.Context()
 sock = context.socket(zmq.PUB)
+sock.setsockopt(zmq.SNDHWM, 10)
+sock.setsockopt(zmq.LINGER, 0)
+sock.setsockopt(zmq.IMMEDIATE, 1)
 sock.bind(endpoint)
 
 hand = "left" # or "right"
