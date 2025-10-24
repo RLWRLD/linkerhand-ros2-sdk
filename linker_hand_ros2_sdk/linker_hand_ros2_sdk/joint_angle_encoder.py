@@ -41,25 +41,25 @@ class JointAngleEncoder(Node):
                 self._source,
             )
             self._source = "ros"
-
+        
+        qos = QoSProfile(
+                reliability=QoSReliabilityPolicy.RELIABLE,
+                depth=5,
+            )
         if self._enable_right_hand:
             self._right_cmd_pub = self.create_publisher(
                 JointState,
                 "/cb_right_hand_control_cmd",
-                10,
+                qos,
             )
         if self._enable_left_hand:
             self._left_cmd_pub = self.create_publisher(
                 JointState,
                 "/cb_left_hand_control_cmd",
-                10,
+                qos,
             )
 
         if self._source == "ros":
-            qos = QoSProfile(
-                reliability=QoSReliabilityPolicy.BEST_EFFORT,
-                depth=1,
-            )
             if self._enable_right_hand:
                 self._right_ref_sub = self.create_subscription(
                     JointState,
@@ -91,6 +91,7 @@ class JointAngleEncoder(Node):
         self._left_cmd_pub.publish(cmd)
 
     def _build_command(self, ref: JointState, hand_type: str) -> JointState:
+        # print(ref.position[1],flush=True)
         byte_cmd = JointState()
         byte_cmd.header = ref.header
         byte_cmd.position = [0.0] * len(ref.position)
@@ -136,7 +137,7 @@ class JointAngleEncoder(Node):
             "zmq_endpoint", "ipc:///tmp/linkerhand_reference"
         ).value
         poll_interval_param = self.declare_parameter(
-            "zmq_poll_interval_sec", 0.01
+            "zmq_poll_interval_sec", 0.002
         ).value
 
         try:
@@ -150,8 +151,11 @@ class JointAngleEncoder(Node):
         self._zmq_sock = self._zmq_context.socket(zmq.SUB)
         self._zmq_sock.setsockopt_string(zmq.SUBSCRIBE, "left")
         self._zmq_sock.setsockopt_string(zmq.SUBSCRIBE, "right")
+        self._zmq_sock.setsockopt(zmq.RCVHWM, 10)
+        self._zmq_sock.setsockopt(zmq.CONFLATE, 0)
+        self._zmq_sock.setsockopt(zmq.RCVTIMEO, 20)
         self._zmq_sock.connect(self._zmq_endpoint)
-
+        
         self._zmq_poller = zmq.Poller()
         self._zmq_poller.register(self._zmq_sock, zmq.POLLIN)
         self._zmq_timer = self.create_timer(poll_interval, self._poll_zmq)
@@ -210,7 +214,6 @@ class JointAngleEncoder(Node):
                 positions = list(struct.unpack(f"<{count}f", payload_bytes))
             except struct.error:
                 positions = None
-
         if positions is None:
             try:
                 payload_text = payload_bytes.decode("utf-8").strip()

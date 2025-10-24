@@ -9,6 +9,7 @@ import subprocess
 import time
 
 from rclpy.node import Node                      # ROS2 节点类
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 import numpy as np
 from std_msgs.msg import String, Header, Float32MultiArray
 from sensor_msgs.msg import JointState
@@ -100,7 +101,7 @@ class LinkerHand(Node):
             self.open_can.open_can(self.can)
             time.sleep(0.1)
             self.touch_type = self.api.get_touch_type()
-            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb,10)
+            self.hand_cmd_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd', self.right_hand_control_cb, QoSProfile(reliability=ReliabilityPolicy.RELIABLE, depth=5))
             # self.hand_cmd_arc_sub = self.create_subscription(JointState, '/cb_right_hand_control_cmd_arc', self.right_hand_control_arc_cb,10)
             self.hand_state_pub = self.create_publisher(JointState, '/cb_right_hand_state',10)
             self.hand_state_arc_pub = self.create_publisher(JointState, '/cb_right_hand_state_arc',10)
@@ -149,14 +150,14 @@ class LinkerHand(Node):
 
     def run(self):
         self.thread_get_state = threading.Thread(target=self._get_hand_state)
-        # self.thread_get_state.daemon = True
-        # self.thread_get_state.start()
-        # self.thread_get_state.join()
+        self.thread_get_state.daemon = True
+        self.thread_get_state.start()
+        self.thread_get_state.join()
         
         self.thread_get_info = threading.Thread(target=self.get_hand_info)
-        # self.thread_get_info.daemon = True
-        # self.thread_get_info.start()
-        # self.thread_get_info.join()
+        self.thread_get_info.daemon = True
+        self.thread_get_info.start()
+        self.thread_get_info.join()
         if self.is_touch == True:
             if self.touch_type == 2:
                 self.thread_get_matrix_touch = threading.Thread(target=self.get_matrix_touch)
@@ -360,6 +361,7 @@ class LinkerHand(Node):
 
     def left_hand_control_cb(self,msg):
         now = time.time()
+        print(now)
         # if now - self.last_process_time < self.min_interval:
         #     return  # 丢弃当前帧，限频处理
         self.last_process_time = now

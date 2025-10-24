@@ -42,6 +42,9 @@ class TestZmqPublisher(Node):
 
         self._zmq_context = zmq.Context()
         self._zmq_socket = self._zmq_context.socket(zmq.PUB)
+        self._zmq_socket.setsockopt(zmq.SNDHWM, 10)
+        self._zmq_socket.setsockopt(zmq.LINGER, 0)
+        self._zmq_socket.setsockopt(zmq.IMMEDIATE, 1)
         self._zmq_socket.bind(endpoint)
         time.sleep(0.1)
 
@@ -49,13 +52,19 @@ class TestZmqPublisher(Node):
             f"Publishing ZMQ joint references on {endpoint} with {self._publish_format} payloads."
         )
 
-        self._timer = self.create_timer(publish_interval, self._publish)
+        self._timer = self.create_timer(0.01, self._publish)
+        self._cnt = 0.0
 
     def _publish(self) -> None:
-        now = time.monotonic()
-        base_value = math.sin(now) * 0.2
+        base_value = math.sin(self._cnt / 50) * 0.5 + 0.5
+        print(f"{base_value:3f}", flush=True)
+        self._cnt += 1
         right_positions = self._make_positions(base_value)
-        left_positions = self._make_positions(-base_value)
+        left_positions = self._make_positions(base_value)
+        # print(f"{base_value:.3f}", flush=True)
+        for i in range(len(left_positions)):
+            if i != 1:
+                left_positions[i] = 0.0
 
         self._send_frame("right", right_positions)
         self._send_frame("left", left_positions)

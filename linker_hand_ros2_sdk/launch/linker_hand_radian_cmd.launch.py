@@ -22,7 +22,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
-                        "hand_type": "right",  # 配置Linker Hand灵巧手类型 left | right 字母为小写
+                        "hand_type": "left",  # 配置Linker Hand灵巧手类型 left | right 字母为小写
                         "hand_joint": "L20",  # O6\L6P\L6\L7\L10\L20\L21 字母为大写
                         "is_touch": True,
                         "can": "can0",
